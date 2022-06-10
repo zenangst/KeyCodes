@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "inputsources",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/zenangst/InputSources",
+      "state" : {
+        "revision" : "b3d72f903dfcfd621ac35e1b9c4b856941b6c775",
+        "version" : "1.0.0"
+      }
+    }
+  ],
+  "version" : 2
+}

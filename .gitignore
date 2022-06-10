@@ -35,4 +35,3 @@ xcuserdata/
 # Local config
 *.local.plist
 *-local.js
-Package.resolved
