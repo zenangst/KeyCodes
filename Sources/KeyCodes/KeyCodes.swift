@@ -1,56 +1,85 @@
+import AppKit
 import Carbon
 
 enum KeyCodesError: Error {
   case failedToMapKeyCode(keyCode: Int, modifiers: UInt32)
+  case failedToMapSystemKeys
 }
 
 final public class KeyCodes {
-  public enum Modifier: CaseIterable {
-    case clear
-    case shift
-    case option
-    case shiftOption
 
-    public var int: UInt32 {
-      switch self {
-      case .clear:
-        return 0
-      case .shift:
-        return UInt32(shiftKey >> 8) & 0xFF
-      case .option:
-        return UInt32(optionKey >> 8) & 0xFF
-      case .shiftOption:
-        return Modifier.shift.int | Modifier.option.int
-      }
-    }
-  }
-
-  public init() { }
+  public init() {}
 
   public func specialKeys() -> [Int: String] {
     Special.keys
   }
 
-  public func mapKeyCodes(from inputSource: TISInputSource) async throws -> KeyCodesContainer {
-    var storage = [KeyCodesValue]()
-    for intValue in 0..<128 {
-      for modifier in Modifier.allCases {
-        let value = try value(for: intValue, modifier: modifier, from: inputSource)
-        storage.append(value)
-      }
+  public func systemKeys(from inputSource: TISInputSource) throws -> [VirtualKey] {
+    var systemKeysUnmanaged: Unmanaged<CFArray>?
+
+    if CopySymbolicHotKeys(&systemKeysUnmanaged) != noErr {
+      throw KeyCodesError.failedToMapSystemKeys
     }
 
-    return KeyCodesContainer(storage)
+    guard let rawSystemKeys = systemKeysUnmanaged?.takeRetainedValue() as? [[String: Any]] else {
+      throw KeyCodesError.failedToMapSystemKeys
+    }
+
+    var values = [VirtualKey]()
+    values.reserveCapacity(rawSystemKeys.count)
+
+    for entry in rawSystemKeys {
+      guard let systemKey = VirtualSystemKey(entry), systemKey.isEnabled else { continue }
+
+      if systemKey.keyCode > 127 { continue }
+
+      let nsEventFlags = NSEvent.ModifierFlags(carbon: systemKey.carbonModifiers)
+      let modifierKeys = VirtualModifierKey.fromNSEvent(nsEventFlags)
+        .filter({ $0 != .clear })
+      let intValue = modifierKeys.intValue
+      let rawValue = try rawValue(for: systemKey.keyCode, modifier: intValue, from: inputSource)
+      let displayValue = Special.keys[systemKey.keyCode] ?? rawValue
+      let value = VirtualKey(keyCode: systemKey.keyCode, rawValue: rawValue,
+                                modifiers: modifierKeys, displayValue: displayValue)
+
+      if !(0..<128).contains(value.keyCode) || modifierKeys.isEmpty {
+        continue
+      }
+
+      values.append(value)
+    }
+
+    return values
   }
 
-  public func value(for keyCode: Int, modifier: Modifier,
-                    from inputSource: TISInputSource) throws -> KeyCodesValue {
-    let rawValue = try rawValue(for: keyCode, modifier: modifier.int, from: inputSource)
+  public func mapKeyCodes(from inputSource: TISInputSource) async throws -> VirtualKeyContainer {
+    var storage = [VirtualKey]()
+    for intValue in 0..<128 {
+      for modifier in VirtualModifierKey.allCases {
+        let value = try value(for: intValue, modifiers: [modifier], from: inputSource)
+        storage.append(value)
+      }
+
+      let value = try value(for: intValue, modifiers: [.option, .shift], from: inputSource)
+      storage.append(value)
+    }
+
+    return VirtualKeyContainer(storage)
+  }
+
+  public func value(for keyCode: Int, modifier: VirtualModifierKey,
+                    from inputSource: TISInputSource) throws -> VirtualKey {
+    try value(for: keyCode, modifiers: [modifier], from: inputSource)
+  }
+
+  public func value(for keyCode: Int, modifiers: [VirtualModifierKey],
+                    from inputSource: TISInputSource) throws -> VirtualKey {
+    let rawValue = try rawValue(for: keyCode, modifier: modifiers.intValue, from: inputSource)
     let displayValue = Special.keys[keyCode] ?? rawValue
-    return KeyCodesValue(
+    return VirtualKey(
       keyCode: keyCode,
-      modifier: modifier,
       rawValue: rawValue,
+      modifiers: modifiers,
       displayValue: displayValue)
   }
 
@@ -82,6 +111,14 @@ final public class KeyCodes {
       throw KeyCodesError.failedToMapKeyCode(keyCode: keyCode, modifiers: modifier)
     }
 
-    return NSString(characters: &chars, length: length) as String
+    return String(utf16CodeUnits: &chars, count: length)
+  }
+}
+
+extension Collection where Element == VirtualModifierKey {
+  var intValue: UInt32 {
+    reduce(into: 0) { partialResult, element in
+      partialResult = partialResult | element.intValue
+    }
   }
 }
