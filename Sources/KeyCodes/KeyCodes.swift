@@ -27,6 +27,10 @@ final public class KeyCodes {
 
   public init() { }
 
+  public func specialKeys() -> [Int: String] {
+    Special.keys
+  }
+
   public func mapKeyCodes(from inputSource: TISInputSource) async throws -> KeyCodesContainer {
     var storage = [KeyCodesValue]()
     for intValue in 0..<128 {
