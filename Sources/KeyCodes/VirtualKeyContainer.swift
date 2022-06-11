@@ -31,9 +31,9 @@ public struct VirtualKeyContainer {
 
   public func valueForString(_ string: String, modifiers: [VirtualModifierKey]) -> VirtualKey? {
     if modifiers.isEmpty {
-      return storage.first(where: { $0.rawValue == string })
+      return storage.first(where: { $0.rawValue == string || $0.displayValue == string })
     } else {
-      return storage.first(where: { $0.rawValue == string && $0.modifiers == modifiers })
+      return storage.first(where: { ($0.rawValue == string || $0.displayValue == string) && $0.modifiers == modifiers })
     }
   }
 }
