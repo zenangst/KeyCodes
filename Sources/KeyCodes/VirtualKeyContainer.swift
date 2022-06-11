@@ -21,19 +21,26 @@ public struct VirtualKeyContainer {
     }
   }
 
-  public func valueForString(_ string: String, modifier: VirtualModifierKey? = nil) -> VirtualKey? {
+  public func valueForString(_ string: String, modifier: VirtualModifierKey? = nil, matchDisplayValue: Bool) -> VirtualKey? {
     if let modifier = modifier {
-      return valueForString(string, modifiers: [modifier])
+      return valueForString(string, modifiers: [modifier], matchDisplayValue: matchDisplayValue)
     } else {
-      return valueForString(string, modifiers: [])
+      return valueForString(string, modifiers: [], matchDisplayValue: matchDisplayValue)
     }
   }
 
-  public func valueForString(_ string: String, modifiers: [VirtualModifierKey]) -> VirtualKey? {
-    if modifiers.isEmpty {
-      return storage.first(where: { $0.rawValue == string || $0.displayValue == string })
+  public func valueForString(_ string: String, modifiers: [VirtualModifierKey], matchDisplayValue: Bool) -> VirtualKey? {
+    let stringMatcher: (VirtualKey) -> Bool
+    if matchDisplayValue {
+      stringMatcher = { $0.rawValue == string || $0.displayValue == string }
     } else {
-      return storage.first(where: { ($0.rawValue == string || $0.displayValue == string) && $0.modifiers == modifiers })
+      stringMatcher = { $0.rawValue == string }
+    }
+
+    if modifiers.isEmpty {
+      return storage.first(where: stringMatcher)
+    } else {
+      return storage.first(where: { stringMatcher($0) && $0.modifiers == modifiers })
     }
   }
 }
