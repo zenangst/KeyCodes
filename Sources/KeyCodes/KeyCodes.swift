@@ -11,7 +11,7 @@ final public class KeyCodes {
   public init() {}
 
   public func specialKeys() -> [Int: String] {
-    Special.keys
+    VirtualSpecialKey.keys
   }
 
   public func systemKeys(from inputSource: TISInputSource) throws -> [VirtualKey] {
@@ -38,9 +38,9 @@ final public class KeyCodes {
         .filter({ $0 != .clear })
       let intValue = modifierKeys.intValue
       let rawValue = try rawValue(for: systemKey.keyCode, modifier: intValue, from: inputSource)
-      let displayValue = Special.keys[systemKey.keyCode] ?? rawValue
+      let displayValue = VirtualSpecialKey.keys[systemKey.keyCode] ?? rawValue.uppercased()
       let value = VirtualKey(keyCode: systemKey.keyCode, rawValue: rawValue,
-                                modifiers: modifierKeys, displayValue: displayValue)
+                             modifiers: modifierKeys, displayValue: displayValue)
 
       if !(0..<128).contains(value.keyCode) || modifierKeys.isEmpty {
         continue
@@ -75,7 +75,7 @@ final public class KeyCodes {
   public func value(for keyCode: Int, modifiers: [VirtualModifierKey],
                     from inputSource: TISInputSource) throws -> VirtualKey {
     let rawValue = try rawValue(for: keyCode, modifier: modifiers.intValue, from: inputSource)
-    let displayValue = Special.keys[keyCode] ?? rawValue
+    let displayValue = VirtualSpecialKey.keys[keyCode] ?? rawValue.uppercased()
     return VirtualKey(
       keyCode: keyCode,
       rawValue: rawValue,

@@ -1,8 +1,8 @@
 import Carbon
 import Cocoa
 
-internal enum Special {
-  static let keys: [Int: String] =
+public enum VirtualSpecialKey {
+  static public let keys: [Int: String] =
     [
       kVK_F1: "F1",
       kVK_F2: "F2",

@@ -35,3 +35,5 @@ xcuserdata/
 # Local config
 *.local.plist
 *-local.js
+Derived
+*.xcodeproj
