@@ -43,11 +43,11 @@ final class KeyCodesTest: XCTestCase {
     XCTAssertEqual(result.valueForKeyCode(0, modifier: .clear)?.rawValue, "a")
     XCTAssertEqual(result.valueForKeyCode(0, modifier: .shift)?.rawValue, "A")
 
-    XCTAssertEqual(result.valueForString("a", modifier: .clear)?.keyCode, 0)
-    XCTAssertEqual(result.valueForString("a", modifier: .clear)?.modifiers, [.clear])
+      XCTAssertEqual(result.valueForString("a", modifier: .clear, matchDisplayValue: true)?.keyCode, 0)
+      XCTAssertEqual(result.valueForString("a", modifier: .clear, matchDisplayValue: true)?.modifiers, [.clear])
 
-    XCTAssertEqual(result.valueForString("A", modifier: .shift)?.keyCode, 0)
-    XCTAssertEqual(result.valueForString("A", modifier: .shift)?.modifiers, [.shift])
+      XCTAssertEqual(result.valueForString("A", modifier: .shift, matchDisplayValue: true)?.keyCode, 0)
+      XCTAssertEqual(result.valueForString("A", modifier: .shift, matchDisplayValue: true)?.modifiers, [.shift])
   }
 
   func testSystemKeys() throws {
