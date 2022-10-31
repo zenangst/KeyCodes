@@ -52,7 +52,7 @@ final public class KeyCodes {
     return values
   }
 
-  public func mapKeyCodes(from inputSource: TISInputSource) async throws -> VirtualKeyContainer {
+  public func mapKeyCodes(from inputSource: TISInputSource) throws -> VirtualKeyContainer {
     var storage = [VirtualKey]()
     for intValue in 0..<128 {
       for modifier in VirtualModifierKey.allCases {
