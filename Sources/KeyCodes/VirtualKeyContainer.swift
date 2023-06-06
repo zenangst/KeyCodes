@@ -1,11 +1,12 @@
 public struct VirtualKeyContainer {
-  private let storage: [VirtualKey]
+  typealias Storage = [String: VirtualKey]
+  private let storage: Storage
 
-  internal init(_ storage: [VirtualKey]) {
+  internal init(_ storage: Storage) {
     self.storage = storage
   }
 
-  public func valueForKeyCode(_ keyCode: Int, modifier: VirtualModifierKey? = nil) -> VirtualKey? {
+  public func valueForKeyCode(_ keyCode: Int, modifier: VirtualModifierKey?) -> VirtualKey? {
     if let modifier = modifier {
       return valueForKeyCode(keyCode, modifiers: [modifier])
     } else {
@@ -13,12 +14,8 @@ public struct VirtualKeyContainer {
     }
   }
 
-  public func valueForKeyCode(_ keyCode: Int, modifiers: [VirtualModifierKey]) -> VirtualKey? {
-    if modifiers.isEmpty {
-      return storage.first(where: { $0.keyCode == keyCode })
-    } else {
-      return storage.first(where: { $0.keyCode == keyCode && $0.modifiers == modifiers })
-    }
+  public func valueForKeyCode(_ keyCode: Int, modifiers: [VirtualModifierKey] = []) -> VirtualKey? {
+    return storage[keyCode.withModifiers(modifiers).prefix(.keyCode)]
   }
 
   public func valueForString(_ string: String, modifier: VirtualModifierKey? = nil, matchDisplayValue: Bool) -> VirtualKey? {
@@ -30,17 +27,38 @@ public struct VirtualKeyContainer {
   }
 
   public func valueForString(_ string: String, modifiers: [VirtualModifierKey], matchDisplayValue: Bool) -> VirtualKey? {
-    let stringMatcher: (VirtualKey) -> Bool
-    if matchDisplayValue {
-      stringMatcher = { $0.rawValue == string || $0.displayValue == string }
-    } else {
-      stringMatcher = { $0.rawValue == string }
+    let rawValueKey = string.withModifiers(modifiers).prefix(.rawValue)
+    if let result = storage[rawValueKey] {
+      return result
     }
 
-    if modifiers.isEmpty {
-      return storage.first(where: stringMatcher)
-    } else {
-      return storage.first(where: { stringMatcher($0) && $0.modifiers == modifiers })
-    }
+    let displayValueKey = string.withModifiers(modifiers).prefix(.displayValue)
+    return storage[displayValueKey]
   }
+}
+
+extension Int {
+  func withModifiers(_ modifiers: [VirtualModifierKey]) -> String {
+    String(self).withModifiers(modifiers)
+  }
+}
+
+extension String {
+  func withModifiers(_ modifiers: [VirtualModifierKey]) -> String {
+    "\(self)\(modifiers.keyValue)"
+  }
+
+  func prefix(_ keySuffix: KeyPrefix) -> String {
+    keySuffix.rawValue + ":" + self
+  }
+}
+
+enum KeyPrefix: String, CaseIterable {
+  case rawValue
+  case displayValue
+  case keyCode
+}
+
+private extension Collection where Element == VirtualModifierKey {
+  var keyValue: String { map(\.rawValue).joined() }
 }

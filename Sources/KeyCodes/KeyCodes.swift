@@ -53,15 +53,21 @@ final public class KeyCodes {
   }
 
   public func mapKeyCodes(from inputSource: TISInputSource) throws -> VirtualKeyContainer {
-    var storage = [VirtualKey]()
+    var storage = [String: VirtualKey]()
     for intValue in 0..<128 {
       for modifier in VirtualModifierKey.allCases {
         let value = try value(for: intValue, modifiers: [modifier], from: inputSource)
-        storage.append(value)
+        storage[value.displayValue.withModifiers([modifier]).prefix(.displayValue)] = value
+        storage[value.rawValue.withModifiers([modifier]).prefix(.rawValue)] = value
+        storage[value.keyCode.withModifiers([modifier]).prefix(.keyCode)] = value
       }
 
-      let value = try value(for: intValue, modifiers: [.option, .shift], from: inputSource)
-      storage.append(value)
+      let modifiers: [VirtualModifierKey] = [.option, .shift]
+      let value = try value(for: intValue, modifiers: modifiers, from: inputSource)
+
+      storage[value.displayValue.withModifiers(modifiers).prefix(.displayValue)] = value
+      storage[value.rawValue.withModifiers(modifiers).prefix(.rawValue)] = value
+      storage[value.keyCode.withModifiers(modifiers).prefix(.keyCode)] = value
     }
 
     return VirtualKeyContainer(storage)

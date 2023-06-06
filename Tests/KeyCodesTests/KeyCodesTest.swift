@@ -38,16 +38,16 @@ final class KeyCodesTest: XCTestCase {
   func testMapKeyCodesFromInputSource() async throws {
     let keyCodes = KeyCodes()
     let input = try InputSourceController().currentInputSource()
-    let result = try await keyCodes.mapKeyCodes(from: input.source)
+    let result = try keyCodes.mapKeyCodes(from: input.source)
 
     XCTAssertEqual(result.valueForKeyCode(0, modifier: .clear)?.rawValue, "a")
     XCTAssertEqual(result.valueForKeyCode(0, modifier: .shift)?.rawValue, "A")
 
-      XCTAssertEqual(result.valueForString("a", modifier: .clear, matchDisplayValue: true)?.keyCode, 0)
-      XCTAssertEqual(result.valueForString("a", modifier: .clear, matchDisplayValue: true)?.modifiers, [.clear])
+    XCTAssertEqual(result.valueForString("a", modifier: .clear, matchDisplayValue: true)?.keyCode, 0)
+    XCTAssertEqual(result.valueForString("a", modifier: .clear, matchDisplayValue: true)?.modifiers, [.clear])
 
-      XCTAssertEqual(result.valueForString("A", modifier: .shift, matchDisplayValue: true)?.keyCode, 0)
-      XCTAssertEqual(result.valueForString("A", modifier: .shift, matchDisplayValue: true)?.modifiers, [.shift])
+    XCTAssertEqual(result.valueForString("A", modifier: .shift, matchDisplayValue: true)?.keyCode, 0)
+    XCTAssertEqual(result.valueForString("A", modifier: .shift, matchDisplayValue: true)?.modifiers, [.shift])
   }
 
   func testSystemKeys() throws {
@@ -191,7 +191,7 @@ final class KeyCodesTest: XCTestCase {
     if !identifierIsInstalled { try controller.install(identifier) }
 
     let input = try controller.select(identifier)
-    
+
     XCTAssertEqual("@", try keyCodes.value(for: 42, modifiers: [], from: input.source).displayValue)
     XCTAssertEqual("+", try keyCodes.value(for: 27, modifiers: [], from: input.source).displayValue)
     XCTAssertEqual(",", try keyCodes.value(for: 43, modifiers: [], from: input.source).displayValue)
