@@ -21,9 +21,19 @@ final class KeyCodesTest: XCTestCase {
     let diamond = try keyCodes.value(for: 0, modifiers: [.shift, .option], from: input.source)
 
     XCTAssertEqual("a", smallA.rawValue)
-    XCTAssertEqual("A", largeA.rawValue)
-    XCTAssertEqual("", appleSymbol.rawValue)
-    XCTAssertEqual("◊", diamond.rawValue)
+    XCTAssertEqual("A", largeA.displayValue)
+    XCTAssertEqual("", appleSymbol.displayValue)
+    XCTAssertEqual("◊", diamond.displayValue)
+  }
+
+  func testMappingDash() throws {
+    let keyCodes = KeyCodes()
+    let input = try InputSourceController().currentInputSource()
+    let dash = try keyCodes.value(for: 44, modifier: .clear, from: input.source)
+    let underscore = try keyCodes.value(for: 44, modifier: .shift, from: input.source)
+
+    XCTAssertEqual("-", dash.rawValue)
+    XCTAssertEqual("_", underscore.displayValue)
   }
 
   func testValueForSpaceKey() throws {
@@ -41,13 +51,17 @@ final class KeyCodesTest: XCTestCase {
     let result = try keyCodes.mapKeyCodes(from: input.source)
 
     XCTAssertEqual(result.valueForKeyCode(0, modifier: .clear)?.rawValue, "a")
-    XCTAssertEqual(result.valueForKeyCode(0, modifier: .shift)?.rawValue, "A")
+    XCTAssertEqual(result.valueForKeyCode(0, modifier: .shift)?.rawValue, "a")
+    XCTAssertEqual(result.valueForKeyCode(0, modifier: .shift)?.displayValue, "A")
 
     XCTAssertEqual(result.valueForString("a", modifier: .clear, matchDisplayValue: true)?.keyCode, 0)
     XCTAssertEqual(result.valueForString("a", modifier: .clear, matchDisplayValue: true)?.modifiers, [.clear])
 
     XCTAssertEqual(result.valueForString("A", modifier: .shift, matchDisplayValue: true)?.keyCode, 0)
     XCTAssertEqual(result.valueForString("A", modifier: .shift, matchDisplayValue: true)?.modifiers, [.shift])
+
+    XCTAssertEqual(result.valueForString("-", modifier: .clear, matchDisplayValue: true)?.keyCode, 44)
+    XCTAssertEqual(result.valueForString("-", modifier: .shift, matchDisplayValue: true)?.keyCode, 44)
   }
 
   func testSystemKeys() throws {

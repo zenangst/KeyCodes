@@ -37,7 +37,7 @@ final public class KeyCodes {
       let modifierKeys = VirtualModifierKey.fromNSEvent(nsEventFlags)
         .filter({ $0 != .clear })
       let intValue = modifierKeys.intValue
-      let rawValue = try rawValue(for: systemKey.keyCode, modifier: intValue, from: inputSource)
+      let rawValue = try resolveRawValue(for: systemKey.keyCode, modifier: intValue, from: inputSource)
       let displayValue = VirtualSpecialKey.keys[systemKey.keyCode] ?? rawValue.uppercased()
       let value = VirtualKey(keyCode: systemKey.keyCode, rawValue: rawValue,
                              modifiers: modifierKeys, displayValue: displayValue)
@@ -54,20 +54,26 @@ final public class KeyCodes {
 
   public func mapKeyCodes(from inputSource: TISInputSource) throws -> VirtualKeyContainer {
     var storage = [String: VirtualKey]()
+    var modifierPairs: [[VirtualModifierKey]] = VirtualModifierKey
+      .allCases
+      .map { [$0] }
+    modifierPairs.append([.option, .shift])
+
     for intValue in 0..<128 {
-      for modifier in VirtualModifierKey.allCases {
-        let value = try value(for: intValue, modifiers: [modifier], from: inputSource)
-        storage[value.displayValue.withModifiers([modifier]).prefix(.displayValue)] = value
-        storage[value.rawValue.withModifiers([modifier]).prefix(.rawValue)] = value
-        storage[value.keyCode.withModifiers([modifier]).prefix(.keyCode)] = value
+      for modifiers in modifierPairs {
+        let value = try value(for: intValue, modifiers: modifiers, from: inputSource)
+
+        storage[value.keyCode.withModifiers(modifiers).prefix(.keyCode)] = value
+
+        if value.displayValue.isEmpty { continue }
+
+        if storage[value.rawValue.withModifiers(modifiers).prefix(.rawValue)] != nil {
+          continue
+        }
+
+        storage[value.displayValue.withModifiers(modifiers).prefix(.displayValue)] = value
+        storage[value.rawValue.withModifiers(modifiers).prefix(.rawValue)] = value
       }
-
-      let modifiers: [VirtualModifierKey] = [.option, .shift]
-      let value = try value(for: intValue, modifiers: modifiers, from: inputSource)
-
-      storage[value.displayValue.withModifiers(modifiers).prefix(.displayValue)] = value
-      storage[value.rawValue.withModifiers(modifiers).prefix(.rawValue)] = value
-      storage[value.keyCode.withModifiers(modifiers).prefix(.keyCode)] = value
     }
 
     return VirtualKeyContainer(storage)
@@ -80,16 +86,22 @@ final public class KeyCodes {
 
   public func value(for keyCode: Int, modifiers: [VirtualModifierKey],
                     from inputSource: TISInputSource) throws -> VirtualKey {
-    let rawValue = try rawValue(for: keyCode, modifier: modifiers.intValue, from: inputSource)
-    let displayValue = VirtualSpecialKey.keys[keyCode] ?? rawValue.uppercased()
+    let rawValue = try resolveRawValue(for: keyCode, modifier: 0, from: inputSource)
+    let displayValue: String
+    if let specialKey = VirtualSpecialKey.keys[keyCode] {
+      displayValue = specialKey
+    } else {
+      displayValue = try resolveRawValue(for: keyCode, modifier: modifiers.intValue, from: inputSource).uppercased()
+    }
+
     return VirtualKey(
       keyCode: keyCode,
       rawValue: rawValue,
       modifiers: modifiers,
-      displayValue: displayValue)
+      displayValue: displayValue.trimmingCharacters(in: .controlCharacters))
   }
 
-  private func rawValue(for keyCode: Int, modifier: UInt32,
+  private func resolveRawValue(for keyCode: Int, modifier: UInt32,
                 from inputSource: TISInputSource) throws -> String {
     let layoutData = TISGetInputSourceProperty(inputSource, kTISPropertyUnicodeKeyLayoutData)
     let dataRef = unsafeBitCast(layoutData, to: CFData.self)

@@ -27,13 +27,14 @@ public struct VirtualKeyContainer {
   }
 
   public func valueForString(_ string: String, modifiers: [VirtualModifierKey], matchDisplayValue: Bool) -> VirtualKey? {
+    let displayValueKey = string.withModifiers(modifiers).prefix(.displayValue)
     let rawValueKey = string.withModifiers(modifiers).prefix(.rawValue)
+
     if let result = storage[rawValueKey] {
       return result
+    } else {
+      return storage[displayValueKey]
     }
-
-    let displayValueKey = string.withModifiers(modifiers).prefix(.displayValue)
-    return storage[displayValueKey]
   }
 }
 
