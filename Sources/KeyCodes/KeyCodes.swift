@@ -86,12 +86,12 @@ final public class KeyCodes {
 
   public func value(for keyCode: Int, modifiers: [VirtualModifierKey],
                     from inputSource: TISInputSource) throws -> VirtualKey {
-    let rawValue = try resolveRawValue(for: keyCode, modifier: 0, from: inputSource)
+    let rawValue = try resolveRawValue(for: keyCode, modifier: modifiers.intValue, from: inputSource)
     let displayValue: String
     if let specialKey = VirtualSpecialKey.keys[keyCode] {
       displayValue = specialKey
     } else {
-      displayValue = try resolveRawValue(for: keyCode, modifier: modifiers.intValue, from: inputSource).uppercased()
+      displayValue = try resolveRawValue(for: keyCode, modifier: modifiers.intValue, from: inputSource)
     }
 
     return VirtualKey(
