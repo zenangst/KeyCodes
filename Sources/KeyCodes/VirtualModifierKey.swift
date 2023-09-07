@@ -35,9 +35,9 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
 
   public static func fromCGEvent(_ event: CGEvent, specialKeys: [Int]) -> [VirtualModifierKey] {
     var specialKeys = specialKeys
-    // Don't treat Space & Tab as a special key because it breaks binding it
+    // Don't treat Space & Tab or Escape as a special key because it breaks binding it
     // together with the fn-key
-    specialKeys.removeAll(where: { $0 == kVK_Space || $0 == kVK_Tab })
+    specialKeys.removeAll(where: { $0 == kVK_Space || $0 == kVK_Tab || $0 == kVK_Escape })
 
     let keyCode = Int(event.getIntegerValueField(.keyboardEventKeycode))
     let flags = event.flags
