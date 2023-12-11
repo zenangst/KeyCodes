@@ -30,10 +30,10 @@ public struct VirtualKeyContainer {
     let displayValueKey = string.withModifiers(modifiers).prefix(.displayValue)
     let rawValueKey = string.withModifiers(modifiers).prefix(.rawValue)
 
-    if let result = storage[rawValueKey] {
-      return result
-    } else {
+    if matchDisplayValue {
       return storage[displayValueKey]
+    } else {
+      return storage[rawValueKey]
     }
   }
 }
