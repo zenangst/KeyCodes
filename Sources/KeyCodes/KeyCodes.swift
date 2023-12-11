@@ -4,6 +4,7 @@ import Carbon
 enum KeyCodesError: Error {
   case failedToMapKeyCode(keyCode: Int, modifiers: UInt32)
   case failedToMapSystemKeys
+  case failedToResolveLayoutData(keyCode: Int, modifiers: UInt32)
 }
 
 final public class KeyCodes {
@@ -102,8 +103,10 @@ final public class KeyCodes {
   }
 
   private func resolveRawValue(for keyCode: Int, modifier: UInt32,
-                from inputSource: TISInputSource) throws -> String {
-    let layoutData = TISGetInputSourceProperty(inputSource, kTISPropertyUnicodeKeyLayoutData)
+                               from inputSource: TISInputSource) throws -> String {
+    guard let layoutData = TISGetInputSourceProperty(inputSource, kTISPropertyUnicodeKeyLayoutData) else {
+      throw KeyCodesError.failedToResolveLayoutData(keyCode: keyCode, modifiers: modifier)
+    }
     let dataRef = unsafeBitCast(layoutData, to: CFData.self)
     let keyLayout = unsafeBitCast(CFDataGetBytePtr(dataRef),
                                   to: UnsafePointer<CoreServices.UCKeyboardLayout>.self)
