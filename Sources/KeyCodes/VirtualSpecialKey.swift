@@ -25,6 +25,7 @@ public enum VirtualSpecialKey {
       kVK_F19: "F19",
       kVK_F20: "F20",
       kVK_Space: "Space",
+      kVK_CapsLock: "Caps Lock",
       kVK_Delete: String(format: "%C", 0x232B),
       kVK_ForwardDelete: String(format: "%C", 0x2326),
       kVK_ANSI_Keypad0: String(format: "%C", 0x2327),

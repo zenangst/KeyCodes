@@ -10,6 +10,7 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
   case control = "^"
   case option = "~"
   case command = "@"
+  case capsLock = "⇪"
 
   public var intValue: UInt32 {
     switch self {
@@ -25,6 +26,8 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
       return UInt32(optionKey >> 8) & 0xFF
     case .command:
       return UInt32(cmdKey >> 8) & 0xFF
+    case .capsLock:
+      return UInt32(alphaLock >> 8) & 0xFF
     }
   }
 
@@ -48,6 +51,7 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
     if flags.contains(.maskControl) { modifiers.append(.control) }
     if flags.contains(.maskAlternate) { modifiers.append(.option) }
     if flags.contains(.maskCommand) { modifiers.append(.command) }
+    if flags.contains(.maskAlphaShift) { modifiers.append(.capsLock) }
     if flags.contains(.maskSecondaryFn) && !isSpecialKey { modifiers.append(.function) }
 
     return modifiers
@@ -55,35 +59,25 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
 
   public var cgModifierFlags: CGEventFlags {
     switch self {
-    case .clear:
-      return .init(rawValue: 0)
-    case .shift:
-      return .maskShift
-    case .control:
-      return .maskControl
-    case .option:
-      return .maskAlternate
-    case .command:
-      return .maskCommand
-    case .function:
-      return .maskSecondaryFn
+    case .clear:    .init(rawValue: 0)
+    case .shift:    .maskShift
+    case .control:  .maskControl
+    case .option:   .maskAlternate
+    case .command:  .maskCommand
+    case .function: .maskSecondaryFn
+    case .capsLock: .maskAlphaShift
     }
   }
 
   public var modifierFlags: NSEvent.ModifierFlags {
     switch self {
-    case .clear:
-      return NSEvent.ModifierFlags(rawValue: 0)
-    case .shift:
-      return .shift
-    case .control:
-      return .control
-    case .option:
-      return .option
-    case .command:
-      return .command
-    case .function:
-      return .function
+    case .clear: NSEvent.ModifierFlags(rawValue: 0)
+    case .shift: .shift
+    case .control: .control
+    case .option: .option
+    case .command: .command
+    case .function: .function
+    case .capsLock: .capsLock
     }
   }
 }
