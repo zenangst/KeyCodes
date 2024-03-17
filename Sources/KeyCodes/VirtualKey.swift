@@ -1,6 +1,6 @@
 import Carbon
 
-public struct VirtualKey {
+public struct VirtualKey: Sendable {
   public let displayValue: String
   public let keyCode: Int
   public let modifiers: [VirtualModifierKey]

@@ -14,20 +14,13 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
 
   public var intValue: UInt32 {
     switch self {
-    case .clear:
-      return 0
-    case .shift:
-      return UInt32(shiftKey >> 8) & 0xFF
-    case .function:
-      return 0
-    case .control:
-      return UInt32(controlKey >> 8) & 0xFF
-    case .option:
-      return UInt32(optionKey >> 8) & 0xFF
-    case .command:
-      return UInt32(cmdKey >> 8) & 0xFF
-    case .capsLock:
-      return UInt32(alphaLock >> 8) & 0xFF
+    case .clear:    0
+    case .shift:    UInt32(shiftKey >> 8) & 0xFF
+    case .function: 0
+    case .control:  UInt32(controlKey >> 8) & 0xFF
+    case .option:   UInt32(optionKey >> 8) & 0xFF
+    case .command:  UInt32(cmdKey >> 8) & 0xFF
+    case .capsLock: UInt32(alphaLock >> 8) & 0xFF
     }
   }
 

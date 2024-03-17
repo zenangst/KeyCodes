@@ -1,6 +1,6 @@
 import Carbon.HIToolbox
 
-internal struct VirtualSystemKey {
+internal struct VirtualSystemKey: Sendable {
   let keyCode: Int
   let carbonModifiers: Int
   let isEnabled: Bool

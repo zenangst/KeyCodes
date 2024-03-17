@@ -19,7 +19,7 @@ public struct VirtualKeyContainer {
   }
 
   public func valueForString(_ string: String, modifier: VirtualModifierKey? = nil, matchDisplayValue: Bool) -> VirtualKey? {
-    if let modifier = modifier {
+    if let modifier {
       return valueForString(string, modifiers: [modifier], matchDisplayValue: matchDisplayValue)
     } else {
       return valueForString(string, modifiers: [], matchDisplayValue: matchDisplayValue)
