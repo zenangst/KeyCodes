@@ -68,7 +68,9 @@ final public class KeyCodes {
 
         if value.displayValue.isEmpty { continue }
 
-        if storage[value.rawValue.withModifiers(modifiers).prefix(.rawValue)] != nil {
+        // Special handling for Function keys.
+        if !value.displayValue.hasPrefix("F") &&
+            storage[value.rawValue.withModifiers(modifiers).prefix(.rawValue)] != nil {
           continue
         }
 
