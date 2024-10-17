@@ -12,4 +12,12 @@ public struct VirtualKey: Sendable {
     self.modifiers = modifiers
     self.displayValue = displayValue
   }
+
+  public var flags: CGEventFlags {
+    var flags = CGEventFlags.maskNonCoalesced
+    for modifier in modifiers {
+      flags.insert(modifier.cgModifierFlags)
+    }
+    return flags
+  }
 }

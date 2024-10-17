@@ -52,7 +52,7 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
 
   public var cgModifierFlags: CGEventFlags {
     switch self {
-    case .clear:    .init(rawValue: 0)
+    case .clear:    .maskNonCoalesced
     case .shift:    .maskShift
     case .control:  .maskControl
     case .option:   .maskAlternate
