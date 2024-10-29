@@ -70,6 +70,7 @@ final public class KeyCodes {
 
         // Special handling for Function keys.
         if !value.displayValue.hasPrefix("F") &&
+           !value.displayValue.hasPrefix("#") &&
             storage[value.rawValue.withModifiers(modifiers).prefix(.rawValue)] != nil {
           continue
         }

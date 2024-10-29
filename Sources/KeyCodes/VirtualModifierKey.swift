@@ -11,6 +11,7 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
   case option = "~"
   case command = "@"
   case capsLock = "⇪"
+  case numpad = "#"
 
   public var intValue: UInt32 {
     switch self {
@@ -21,6 +22,7 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
     case .option:   UInt32(optionKey >> 8) & 0xFF
     case .command:  UInt32(cmdKey >> 8) & 0xFF
     case .capsLock: UInt32(alphaLock >> 8) & 0xFF
+    case .numpad:   UInt32(NX_NUMERICPADMASK >> 8) & 0xFF
     }
   }
 
@@ -46,6 +48,7 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
     if flags.contains(.maskCommand) { modifiers.append(.command) }
     if flags.contains(.maskAlphaShift) { modifiers.append(.capsLock) }
     if flags.contains(.maskSecondaryFn) && !isSpecialKey { modifiers.append(.function) }
+    if flags.contains(.maskNumericPad) { modifiers.append(.numpad) }
 
     return modifiers
   }
@@ -59,6 +62,7 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
     case .command:  .maskCommand
     case .function: .maskSecondaryFn
     case .capsLock: .maskAlphaShift
+    case .numpad:   .maskNumericPad
     }
   }
 
@@ -71,6 +75,7 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
     case .command: .command
     case .function: .function
     case .capsLock: .capsLock
+    case .numpad: .numericPad
     }
   }
 }
