@@ -6,16 +6,8 @@ public struct VirtualKeyContainer {
     self.storage = storage
   }
 
-  public func valueForKeyCode(_ keyCode: Int, modifier: VirtualModifierKey?) -> VirtualKey? {
-    if let modifier = modifier {
-      return valueForKeyCode(keyCode, modifiers: [modifier])
-    } else {
-      return valueForKeyCode(keyCode, modifiers: [])
-    }
-  }
-
   public func valueForKeyCode(_ keyCode: Int, modifiers: [VirtualModifierKey] = []) -> VirtualKey? {
-    return storage[keyCode.withModifiers(modifiers).prefix(.keyCode)]
+    storage[keyCode.withModifiers(modifiers).prefix(.keyCode)]
   }
 
   public func valueForString(_ string: String, modifier: VirtualModifierKey? = nil, matchDisplayValue: Bool) -> VirtualKey? {

@@ -4,10 +4,12 @@ import Carbon
 enum KeyCodesError: Error {
   case failedToMapKeyCode(keyCode: Int, modifiers: UInt32)
   case failedToMapSystemKeys
+  case failedToGetCurrentInputSource
   case failedToResolveLayoutData(keyCode: Int, modifiers: UInt32)
 }
 
 final public class KeyCodes {
+  private static let debugSystemKeys: Bool = false
 
   public init() {}
 
@@ -34,20 +36,26 @@ final public class KeyCodes {
 
       if systemKey.keyCode > 127 { continue }
 
-      let nsEventFlags = NSEvent.ModifierFlags(carbon: systemKey.carbonModifiers)
-      let modifierKeys = VirtualModifierKey.fromNSEvent(nsEventFlags)
-        .filter({ $0 != .clear })
-      let intValue = modifierKeys.intValue
-      let rawValue = try resolveRawValue(for: systemKey.keyCode, modifier: intValue, from: inputSource)
+      let rawModifierKeys = CGEventFlags(carbon: systemKey.carbonModifiers)
+      let rawValue = try resolveRawValue(for: systemKey.keyCode, modifiers: UInt32(rawModifierKeys.rawValue), from: inputSource)
       let displayValue = VirtualSpecialKey.keys[systemKey.keyCode] ?? rawValue.uppercased()
+      let modifierKeys = VirtualModifierKey.fromCGEvent(rawModifierKeys)
       let value = VirtualKey(keyCode: systemKey.keyCode, rawValue: rawValue,
                              modifiers: modifierKeys, displayValue: displayValue)
+
+      if Self.debugSystemKeys {
+        print(value.keyCode, displayValue, systemKey.carbonModifiers)
+      }
 
       if !(0..<128).contains(value.keyCode) || modifierKeys.isEmpty {
         continue
       }
 
       values.append(value)
+    }
+
+    if Self.debugSystemKeys {
+      print(values.count)
     }
 
     return values
@@ -58,44 +66,34 @@ final public class KeyCodes {
     var modifierPairs: [[VirtualModifierKey]] = VirtualModifierKey
       .allCases
       .map { [$0] }
-    modifierPairs.append([.option, .shift])
+    modifierPairs.append([.rightOption, .leftShift])
 
     for intValue in 0..<128 {
-      for modifiers in modifierPairs {
-        let value = try value(for: intValue, modifiers: modifiers, from: inputSource)
+      do {
+        let value = try value(for: intValue, modifiers: [], from: inputSource)
+        mapAndStore(value, modifiers: [], storage: &storage)
+      }
 
-        storage[value.keyCode.withModifiers(modifiers).prefix(.keyCode)] = value
-
-        if value.displayValue.isEmpty { continue }
-
-        // Special handling for Function keys.
-        if !value.displayValue.hasPrefix("F") &&
-           !value.displayValue.hasPrefix("#") &&
-            storage[value.rawValue.withModifiers(modifiers).prefix(.rawValue)] != nil {
-          continue
+      do {
+        for modifiers in modifierPairs {
+          let value = try value(for: intValue, modifiers: modifiers, from: inputSource)
+          mapAndStore(value, modifiers: modifiers, storage: &storage)
         }
-
-        storage[value.displayValue.withModifiers(modifiers).prefix(.displayValue)] = value
-        storage[value.rawValue.withModifiers(modifiers).prefix(.rawValue)] = value
       }
     }
 
     return VirtualKeyContainer(storage)
   }
 
-  public func value(for keyCode: Int, modifier: VirtualModifierKey,
-                    from inputSource: TISInputSource) throws -> VirtualKey {
-    try value(for: keyCode, modifiers: [modifier], from: inputSource)
-  }
-
-  public func value(for keyCode: Int, modifiers: [VirtualModifierKey],
-                    from inputSource: TISInputSource) throws -> VirtualKey {
-    let rawValue = try resolveRawValue(for: keyCode, modifier: modifiers.intValue, from: inputSource)
+  public func value(for keyCode: Int, modifiers: [VirtualModifierKey], from inputSource: TISInputSource) throws -> VirtualKey {
     let displayValue: String
+    let rawValue: String
     if let specialKey = VirtualSpecialKey.keys[keyCode] {
       displayValue = specialKey
+      rawValue = try resolveRawValue(for: keyCode, modifiers: modifiers.intValue, from: inputSource)
     } else {
-      displayValue = try resolveRawValue(for: keyCode, modifier: modifiers.intValue, from: inputSource)
+      displayValue = try resolveRawValue(for: keyCode, modifiers: modifiers.intValue, from: inputSource)
+      rawValue = displayValue
     }
 
     return VirtualKey(
@@ -105,25 +103,45 @@ final public class KeyCodes {
       displayValue: displayValue.trimmingCharacters(in: .controlCharacters))
   }
 
-  private func resolveRawValue(for keyCode: Int, modifier: UInt32,
-                               from inputSource: TISInputSource) throws -> String {
-    guard let layoutData = TISGetInputSourceProperty(inputSource, kTISPropertyUnicodeKeyLayoutData) else {
-      throw KeyCodesError.failedToResolveLayoutData(keyCode: keyCode, modifiers: modifier)
+  internal func mapAndStore(_ virtualKey: VirtualKey, modifiers: [VirtualModifierKey], storage: inout [String: VirtualKey]) {
+    storage[virtualKey.keyCode.withModifiers(modifiers).prefix(.keyCode)] = virtualKey
+
+    if virtualKey.displayValue.isEmpty { return }
+
+    // Special handling for Function keys.
+    if !virtualKey.displayValue.hasPrefix("F") &&
+        !virtualKey.displayValue.hasPrefix("#") &&
+        storage[virtualKey.rawValue.withModifiers(modifiers).prefix(.rawValue)] != nil {
+      return
     }
+
+    storage[virtualKey.displayValue.withModifiers(modifiers).prefix(.displayValue)] = virtualKey
+    storage[virtualKey.rawValue.withModifiers(modifiers).prefix(.rawValue)] = virtualKey
+  }
+
+  private func resolveRawValue(for keyCode: Int, modifiers: UInt32, from inputSource: TISInputSource) throws -> String {
+    let cgEventFlags = CGEventFlags(rawValue: UInt64(modifiers))
+    let modifiers = UInt32(cgEventFlags.rawValue)
+
+    guard let layoutData = TISGetInputSourceProperty(inputSource, kTISPropertyUnicodeKeyLayoutData) else {
+      throw KeyCodesError.failedToResolveLayoutData(keyCode: keyCode, modifiers: modifiers)
+    }
+
     let dataRef = unsafeBitCast(layoutData, to: CFData.self)
-    let keyLayout = unsafeBitCast(CFDataGetBytePtr(dataRef),
-                                  to: UnsafePointer<CoreServices.UCKeyboardLayout>.self)
-    let keyTranslateOptions = OptionBits(CoreServices.kUCKeyTranslateNoDeadKeysBit)
-    let maxChars = 256
+    let keyLayout = unsafeBitCast(CFDataGetBytePtr(dataRef), to: UnsafePointer<UCKeyboardLayout>.self)
+    let keyTranslateOptions = OptionBits(kUCKeyTranslateNoDeadKeysBit)
+    let maxChars = 4
+
     var deadKeyState: UInt32 = 0
     var chars = [UniChar](repeating: 0, count: maxChars)
     var length = 0
 
-    let error = CoreServices.UCKeyTranslate(
+    let modifierKeyState: UInt32 = UInt32(cgEventFlags.carbon)
+    let error = UCKeyTranslate(
       keyLayout,
       UInt16(keyCode),
       UInt16(CoreServices.kUCKeyActionDisplay),
-      modifier,
+      ((modifierKeyState) >> 8) & 0xFF,
       UInt32(LMGetKbdType()),
       keyTranslateOptions,
       &deadKeyState,
@@ -132,17 +150,41 @@ final public class KeyCodes {
       &chars)
 
     if error != noErr {
-      throw KeyCodesError.failedToMapKeyCode(keyCode: keyCode, modifiers: modifier)
+      throw KeyCodesError.failedToMapKeyCode(keyCode: keyCode, modifiers: modifiers)
     }
 
-    return String(utf16CodeUnits: &chars, count: length)
+    return String(utf16CodeUnits: chars, count: length)
   }
 }
 
 extension Collection where Element == VirtualModifierKey {
   var intValue: UInt32 {
-    reduce(into: 0) { partialResult, element in
-      partialResult = partialResult | element.intValue
+    var cgFlags = CGEventFlags(rawValue: 0)
+    for element in self {
+      cgFlags.insert(element.cgEventFlags)
     }
+
+    return UInt32(cgFlags.rawValue)
+  }
+}
+
+extension CGEventFlags {
+  var carbon: Int {
+    var modifierFlags = 0
+
+    if contains(.maskControl) { modifierFlags |= controlKey }
+    if contains(.maskAlternate) { modifierFlags |= optionKey }
+    if contains(.maskShift) { modifierFlags |= shiftKey }
+    if contains(.maskCommand) { modifierFlags |= cmdKey }
+
+    return modifierFlags
+  }
+
+  init(carbon: Int) {
+    self.init()
+    if carbon & controlKey == controlKey { insert(.maskControl) }
+    if carbon & optionKey == optionKey { insert(.maskAlternate) }
+    if carbon & shiftKey == shiftKey { insert(.maskShift) }
+    if carbon & cmdKey == cmdKey { insert(.maskCommand) }
   }
 }

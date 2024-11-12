@@ -16,7 +16,7 @@ public struct VirtualKey: Sendable {
   public var flags: CGEventFlags {
     var flags = CGEventFlags.maskNonCoalesced
     for modifier in modifiers {
-      flags.insert(modifier.cgModifierFlags)
+      flags.insert(modifier.cgEventFlags)
     }
     return flags
   }

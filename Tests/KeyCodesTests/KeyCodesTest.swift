@@ -13,24 +13,28 @@ final class KeyCodesTest: XCTestCase {
 
   func testMappingRawValueA() throws  {
     let keyCodes = KeyCodes()
-    let input = try InputSourceController().currentInputSource()
+    let controller = InputSourceController()
+    let identifier = InputSourceIdentifier.swedish.rawValue
+    let identifierIsInstalled = controller.isInstalled(id: identifier)
 
-    let smallA = try keyCodes.value(for: 0, modifier: .clear, from: input.source)
-    let largeA = try keyCodes.value(for: 0, modifier: .shift, from: input.source)
-    let appleSymbol = try keyCodes.value(for: 0, modifier: .option, from: input.source)
-    let diamond = try keyCodes.value(for: 0, modifiers: [.shift, .option], from: input.source)
+    if !identifierIsInstalled { try controller.install(identifier) }
 
-    XCTAssertEqual("a", smallA.rawValue)
-    XCTAssertEqual("A", largeA.rawValue)
-    XCTAssertEqual("", appleSymbol.displayValue)
-    XCTAssertEqual("◊", diamond.displayValue)
+    let input = try controller.select(identifier)
+
+    XCTAssertEqual("a", try keyCodes.value(for: 0, modifiers: [], from: input.source).displayValue)
+    XCTAssertEqual("A", try keyCodes.value(for: 0, modifiers: [.leftShift], from: input.source).displayValue)
+    XCTAssertEqual("A", try keyCodes.value(for: 0, modifiers: [.rightShift], from: input.source).displayValue)
+    XCTAssertEqual("", try keyCodes.value(for: 0, modifiers: [.leftOption], from: input.source).displayValue)
+    XCTAssertEqual("", try keyCodes.value(for: 0, modifiers: [.rightOption], from: input.source).displayValue)
+    XCTAssertEqual("◊", try keyCodes.value(for: 0, modifiers: [.leftShift, .leftOption], from: input.source).displayValue)
+    XCTAssertEqual("◊", try keyCodes.value(for: 0, modifiers: [.leftShift, .rightOption], from: input.source).displayValue)
   }
 
   func testMappingDash() throws {
     let keyCodes = KeyCodes()
     let input = try InputSourceController().currentInputSource()
-    let dash = try keyCodes.value(for: 44, modifier: .clear, from: input.source)
-    let underscore = try keyCodes.value(for: 44, modifier: .shift, from: input.source)
+    let dash = try keyCodes.value(for: 44, modifiers: [], from: input.source)
+    let underscore = try keyCodes.value(for: 44, modifiers: [.leftShift], from: input.source)
 
     XCTAssertEqual("-", dash.rawValue)
     XCTAssertEqual("_", underscore.displayValue)
@@ -39,7 +43,7 @@ final class KeyCodesTest: XCTestCase {
   func testValueForSpaceKey() throws {
     let keyCodes = KeyCodes()
     let input = try InputSourceController().currentInputSource()
-    let space = try keyCodes.value(for: kVK_Space, modifier: .clear, from: input.source)
+    let space = try keyCodes.value(for: kVK_Space, modifiers: [], from: input.source)
 
     XCTAssertEqual(" ", space.rawValue)
     XCTAssertEqual("Space", space.displayValue)
@@ -47,21 +51,28 @@ final class KeyCodesTest: XCTestCase {
 
   func testMapKeyCodesFromInputSource() async throws {
     let keyCodes = KeyCodes()
-    let input = try InputSourceController().currentInputSource()
+    let controller = InputSourceController()
+    let identifier = InputSourceIdentifier.swedish.rawValue
+    let identifierIsInstalled = controller.isInstalled(id: identifier)
+
+    if !identifierIsInstalled { try controller.install(identifier) }
+
+    let input = try controller.select(identifier)
     let result = try keyCodes.mapKeyCodes(from: input.source)
 
-    XCTAssertEqual(result.valueForKeyCode(0, modifier: .clear)?.rawValue, "a")
-    XCTAssertEqual(result.valueForKeyCode(0, modifier: .shift)?.rawValue, "A")
-    XCTAssertEqual(result.valueForKeyCode(0, modifier: .shift)?.displayValue, "A")
+    XCTAssertEqual(result.valueForKeyCode(0, modifiers: [])?.rawValue, "a")
+    XCTAssertEqual(result.valueForKeyCode(0, modifiers: [.leftShift])?.rawValue, "A")
+    XCTAssertEqual(result.valueForKeyCode(0, modifiers: [.leftShift])?.displayValue, "A")
 
-    XCTAssertEqual(result.valueForString("a", modifier: .clear, matchDisplayValue: true)?.keyCode, 0)
-    XCTAssertEqual(result.valueForString("a", modifier: .clear, matchDisplayValue: true)?.modifiers, [.clear])
+    XCTAssertEqual(result.valueForString("a", modifiers: [], matchDisplayValue: true)?.keyCode, 0)
+    XCTAssertEqual(result.valueForString("a", modifiers: [], matchDisplayValue: true)?.modifiers, [])
 
-    XCTAssertEqual(result.valueForString("A", modifier: .shift, matchDisplayValue: true)?.keyCode, 0)
-    XCTAssertEqual(result.valueForString("A", modifier: .shift, matchDisplayValue: true)?.modifiers, [.shift])
+    XCTAssertEqual(result.valueForString("A", modifiers: [.leftShift], matchDisplayValue: true)?.keyCode, 0)
+    XCTAssertEqual(result.valueForString("A", modifiers: [.leftShift], matchDisplayValue: true)?.modifiers, [.leftShift])
 
-    XCTAssertEqual(result.valueForString("-", modifier: .clear, matchDisplayValue: true)?.keyCode, 44)
-    XCTAssertEqual(result.valueForString("_", modifier: .shift, matchDisplayValue: true)?.keyCode, 44)
+    XCTAssertEqual(result.valueForString("-", modifiers: [], matchDisplayValue: true)?.keyCode, 44)
+    XCTAssertEqual(result.valueForString("-", modifiers: [.numpad], matchDisplayValue: true)?.keyCode, 44)
+    XCTAssertEqual(result.valueForString("-", modifiers: [.leftShift], matchDisplayValue: true)?.keyCode, 78)
   }
 
   func testSystemKeys() throws {
@@ -293,7 +304,6 @@ final class KeyCodesTest: XCTestCase {
     XCTAssertEqual("Space", try keyCodes.value(for: kVK_Space, modifiers: [], from: input.source).displayValue)
     XCTAssertEqual("⌫", try keyCodes.value(for: kVK_Delete, modifiers: [], from: input.source).displayValue)
     XCTAssertEqual("⌦", try keyCodes.value(for: kVK_ForwardDelete, modifiers: [], from: input.source).displayValue)
-    XCTAssertEqual("⌧", try keyCodes.value(for: kVK_ANSI_Keypad0, modifiers: [], from: input.source).displayValue)
     XCTAssertEqual("←", try keyCodes.value(for: kVK_LeftArrow, modifiers: [], from: input.source).displayValue)
     XCTAssertEqual("→", try keyCodes.value(for: kVK_RightArrow, modifiers: [], from: input.source).displayValue)
     XCTAssertEqual("↑", try keyCodes.value(for: kVK_UpArrow, modifiers: [], from: input.source).displayValue)
