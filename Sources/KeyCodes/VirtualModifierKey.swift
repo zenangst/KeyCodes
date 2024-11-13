@@ -18,7 +18,14 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
   case rightOption = "r~"
   case rightCommand = "r@"
 
-  public static func fromCGEvent(_ flags: CGEventFlags) -> [VirtualModifierKey] {
+  public static func fromCGEvent(_ keyCode: Int, flags: CGEventFlags, specialKeys: [Int]) -> [VirtualModifierKey] {
+    var specialKeys = specialKeys
+    // Don't treat Space & Tab or Escape as a special key because it breaks binding it
+    // together with the fn-key
+    specialKeys.removeAll(where: { $0 == kVK_Space || $0 == kVK_Tab || $0 == kVK_Escape })
+
+    let isSpecialKey = specialKeys.contains(keyCode)
+
     var modifiers = [VirtualModifierKey]()
 
     if flags.contains(.maskLeftShift)      { modifiers.append(.leftShift) }
@@ -48,7 +55,7 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
     }
 
     if flags.contains(.maskAlphaShift)     { modifiers.append(.capsLock) }
-    if flags.contains(.maskSecondaryFn)    { modifiers.append(.function) }
+    if flags.contains(.maskSecondaryFn) && !isSpecialKey { modifiers.append(.function) }
     if flags.contains(.maskNumericPad)     { modifiers.append(.numpad) }
 
     return modifiers
