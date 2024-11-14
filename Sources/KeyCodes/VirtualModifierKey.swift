@@ -18,7 +18,7 @@ public enum VirtualModifierKey: String, CaseIterable, Codable, Hashable, Identif
   case rightOption = "r~"
   case rightCommand = "r@"
 
-  public static func fromCGEvent(_ keyCode: Int, flags: CGEventFlags, specialKeys: [Int]) -> [VirtualModifierKey] {
+  public static func modifiers(for keyCode: Int, flags: CGEventFlags, specialKeys: [Int]) -> [VirtualModifierKey] {
     var specialKeys = specialKeys
     // Don't treat Space & Tab or Escape as a special key because it breaks binding it
     // together with the fn-key

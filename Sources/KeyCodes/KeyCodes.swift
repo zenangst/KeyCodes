@@ -39,7 +39,7 @@ final public class KeyCodes {
       let rawModifierKeys = CGEventFlags(carbon: systemKey.carbonModifiers)
       let rawValue = try resolveRawValue(for: systemKey.keyCode, modifiers: UInt32(rawModifierKeys.rawValue), from: inputSource)
       let displayValue = VirtualSpecialKey.keys[systemKey.keyCode] ?? rawValue.uppercased()
-      let modifierKeys = VirtualModifierKey.fromCGEvent(systemKey.keyCode, flags: rawModifierKeys, specialKeys: Array(specialKeys().keys))
+      let modifierKeys = VirtualModifierKey.modifiers(for: systemKey.keyCode, flags: rawModifierKeys, specialKeys: Array(specialKeys().keys))
       let value = VirtualKey(keyCode: systemKey.keyCode, rawValue: rawValue,
                              modifiers: modifierKeys, displayValue: displayValue)
 
