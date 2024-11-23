@@ -61,6 +61,7 @@ final public class KeyCodes {
     return values
   }
 
+  @MainActor
   public func mapKeyCodes(from inputSource: TISInputSource) throws -> VirtualKeyContainer {
     var storage = [String: VirtualKey]()
     var modifierPairs: [[VirtualModifierKey]] = VirtualModifierKey

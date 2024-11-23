@@ -1,3 +1,4 @@
+@MainActor
 public struct VirtualKeyContainer {
   typealias Storage = [String: VirtualKey]
   private let storage: Storage
